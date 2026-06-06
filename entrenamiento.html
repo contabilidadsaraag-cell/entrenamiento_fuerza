@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<title>Mi Entrenamiento</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f4;
+    --bg3: #eeede9;
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #9a9a96;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --success-bg: #eaf3de;
+    --success-text: #3b6d11;
+    --success-dot: #639922;
+    --warn-text: #854f0b;
+    --radius: 10px;
+    --radius-sm: 7px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg2: #262624;
+      --bg3: #2e2e2c;
+      --text: #f0efe9;
+      --text2: #9a9a96;
+      --text3: #6b6b67;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+      --success-bg: #1a2e0a;
+      --success-text: #8fcc4a;
+      --success-dot: #639922;
+      --warn-text: #d4924a;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg3);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--bg3);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+  header {
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border);
+    padding: 16px 16px 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 { font-size: 17px; font-weight: 600; padding-bottom: 12px; }
+  .tabs { display: flex; gap: 0; }
+  .tab {
+    flex: 1; padding: 10px 8px; font-size: 14px; cursor: pointer;
+    border: none; background: none; color: var(--text2);
+    border-bottom: 2px solid transparent; transition: all .15s;
+    font-family: inherit;
+  }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+  .page { display: none; padding: 12px 12px 0; }
+  .page.active { display: block; }
+
+  .card {
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border: 0.5px solid var(--border);
+  }
+  .card-title { font-size: 15px; font-weight: 600; }
+  .card-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+
+  .badge {
+    font-size: 11px; padding: 3px 9px;
+    border-radius: 20px; background: var(--bg2);
+    color: var(--text2); flex-shrink: 0;
+  }
+  .section-lbl {
+    font-size: 10px; font-weight: 600; color: var(--text3);
+    text-transform: uppercase; letter-spacing: .06em;
+    margin: 14px 0 6px;
+  }
+  .ex-row {
+    border-bottom: 0.5px solid var(--border);
+    padding: 9px 0;
+  }
+  .ex-row:last-child { border-bottom: none; }
+  .ex-main { display: flex; align-items: center; gap: 10px; }
+  .ex-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1.5px solid var(--border2); background: none;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0; transition: all .15s;
+  }
+  .ex-check.done { background: var(--success-bg); border-color: var(--success-dot); }
+  .ex-check.done::after { content: '✓'; font-size: 12px; color: var(--success-text); font-weight: 700; }
+  .ex-name { font-size: 14px; font-weight: 500; flex: 1; }
+  .ex-detail { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .sets { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+  .set-dot {
+    width: 11px; height: 11px; border-radius: 50%;
+    border: 1.5px solid var(--border2); cursor: pointer; transition: all .15s;
+  }
+  .set-dot.done { background: var(--success-dot); border-color: var(--success-dot); }
+  .info-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text3); font-size: 17px; padding: 0 2px;
+    line-height: 1; flex-shrink: 0;
+  }
+  .guide {
+    margin: 8px 0 2px 32px; background: var(--bg2);
+    border-radius: var(--radius-sm); padding: 10px 12px; display: none;
+  }
+  .guide.open { display: block; }
+  .guide ul { list-style: none; padding: 0; }
+  .guide li {
+    font-size: 12px; color: var(--text2); padding: 3px 0 3px 14px;
+    position: relative; line-height: 1.5;
+  }
+  .guide li::before { content: '·'; position: absolute; left: 0; color: var(--text3); }
+  .guide-alert { font-size: 11px; color: var(--warn-text); margin-top: 7px; }
+
+  .prog-bg { height: 4px; background: var(--bg2); border-radius: 2px; margin-top: 8px; }
+  .prog-bar { height: 4px; border-radius: 2px; background: var(--text); transition: width .3s; }
+
+  .notes-lbl { font-size: 11px; color: var(--text3); margin-top: 14px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .05em; }
+  textarea {
+    width: 100%; padding: 10px 12px;
+    border: 1px solid var(--border2); border-radius: var(--radius-sm);
+    background: var(--bg2); color: var(--text);
+    font-size: 13px; font-family: inherit;
+    resize: vertical; min-height: 70px; line-height: 1.5;
+  }
+  textarea:focus { outline: none; border-color: var(--text3); }
+  textarea::placeholder { color: var(--text3); }
+
+  .btn-complete {
+    width: 100%; margin-top: 12px; padding: 11px;
+    border-radius: var(--radius-sm); border: 1px solid var(--success-dot);
+    background: var(--success-bg); color: var(--success-text);
+    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .btn-complete:active { opacity: .8; }
+
+  .tip {
+    font-size: 12px; color: var(--text2);
+    background: var(--bg); border-radius: var(--radius);
+    padding: 10px 14px; margin-bottom: 10px;
+    border: 0.5px solid var(--border); line-height: 1.6;
+  }
+
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 10px; }
+  .stat {
+    background: var(--bg); border-radius: var(--radius);
+    padding: 12px 8px; text-align: center;
+    border: 0.5px solid var(--border);
+  }
+  .stat-num { font-size: 22px; font-weight: 700; }
+  .stat-lbl { font-size: 10px; color: var(--text2); margin-top: 2px; }
+
+  .hist-row { padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .hist-row:last-child { border-bottom: none; }
+  .hist-top { display: flex; justify-content: space-between; align-items: center; }
+  .hist-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success-dot); margin-right: 8px; flex-shrink: 0; }
+  .hist-day { font-size: 14px; font-weight: 500; }
+  .hist-date { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .hist-pct { font-size: 13px; color: var(--success-text); font-weight: 600; }
+  .hist-note { font-size: 12px; color: var(--text2); margin-top: 5px; margin-left: 16px; font-style: italic; }
+
+  .week-bar { display: flex; gap: 4px; margin-bottom: 10px; }
+  .wday { flex: 1; text-align: center; }
+  .wday-name { font-size: 10px; color: var(--text3); margin-bottom: 5px; }
+  .wday-circle {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--border); margin: 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--text2);
+  }
+  .wday-circle.planned { border-color: var(--border2); background: var(--bg2); }
+  .wday-circle.done { background: var(--text); color: var(--bg); border: none; font-size: 13px; }
+  .wday-circle.today { border: 2px solid var(--text); }
+
+  .rest-center { text-align: center; padding: 2rem 1rem; }
+  .rest-icon { font-size: 40px; margin-bottom: 12px; }
+  .rest-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .rest-sub { font-size: 13px; color: var(--text2); }
+
+  .btn-clear {
+    width: 100%; margin-top: 8px; padding: 9px;
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: none; color: var(--text2); font-size: 13px;
+    cursor: pointer; font-family: inherit;
+  }
+  .btn-clear:active { opacity: .7; }
+
+  .empty-center { text-align: center; padding: 2rem 1rem; color: var(--text2); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>💪 Mi Entrenamiento</h1>
+    <div class="tabs">
+      <button class="tab active" onclick="showPage('hoy')">Hoy</button>
+      <button class="tab" onclick="showPage('semana')">Semana</button>
+      <button class="tab" onclick="showPage('historial')">Historial</button>
+    </div>
+  </header>
+  <div id="page-hoy" class="page active"></div>
+  <div id="page-semana" class="page"></div>
+  <div id="page-historial" class="page"></div>
+</div>
+
+<script>
+const GUIDES = {
+  "Respiración + abdomen": {
+    steps:["Pon una mano en el pecho y otra en el abdomen","Inhala por la nariz: el abdomen sube, el pecho quieto","Exhala lento: mete el ombligo hacia dentro (como abrocharte el pantalón)","A la vez: activa suavemente el suelo pélvico (como aguantar pipí)"],
+    alert:"Esto es lo que 'recoge' la barriga. Lo más importante."
+  },
+  "Puente de glúteo": {
+    steps:["Boca arriba, rodillas flexionadas, pies apoyados","Empuja con los talones y sube la cadera","Aprieta los glúteos arriba","No arquees la espalda"],
+    alert:"Si no lo notas en el glúteo → lo estás haciendo mal."
+  },
+  "Bird dog": {
+    steps:["A cuatro patas, espalda neutra","Extiende el brazo derecho y la pierna izquierda a la vez","Movimiento lento y controlado","Mantén la zona lumbar sin hundirse"],
+    alert:"Esto es oro para tu core."
+  },
+  "Sentadilla goblet": {
+    steps:["Sujeta la mancuerna pegada al pecho","Pies a la anchura de los hombros, ligeramente hacia afuera","Baja como si te fueras a sentar","Rodillas siguen la línea de los pies","Peso en los talones, espalda recta"],
+    alert:"Si te duelen las rodillas → baja menos o usa una silla."
+  },
+  "Remo con mancuerna": {
+    steps:["Inclínate hacia delante con espalda recta","Lleva el codo hacia atrás (no hacia arriba)","No subas los hombros","Controla la bajada"],
+    alert:"Mejora la postura: clave para la barriga."
+  },
+  "Hip thrust (sofá)": {
+    steps:["Espalda apoyada en el sofá o banco","Sube la cadera con fuerza","Mentón hacia dentro para proteger las cervicales","Aprieta el glúteo arriba","Puedes añadir peso encima de la pelvis"],
+    alert:"CLAVE para cambiar la forma del cuerpo."
+  },
+  "Peso muerto con mancuernas": {
+    steps:["De pie con mancuernas delante de los muslos","Empuja la cadera hacia atrás","Espalda recta, rodillas ligeramente flexionadas","Baja las mancuernas por las piernas","Sube apretando los glúteos"],
+    alert:"Si lo haces bien → lo notas en glúteo/isquios, no en lumbar."
+  },
+  "Dead bug": {
+    steps:["Boca arriba, brazos hacia el techo, rodillas a 90°","Baja el brazo derecho y la pierna izquierda a la vez","Mantén la zona lumbar pegada al suelo","Vuelve al centro y cambia de lado"],
+    alert:"Si arqueas la espalda → paras."
+  },
+  "Plancha": {
+    steps:["Apoya los codos justo debajo de los hombros","Cuerpo en línea recta de cabeza a talones","Abdomen activo y glúteo apretado","Cuello neutro"],
+    alert:"Mejor bien corta que mal larga."
+  },
+  "Zancadas": {
+    steps:["Da un paso hacia delante (o hacia atrás si molesta la rodilla)","Baja la rodilla trasera hacia el suelo","Rodilla delantera no pasa la punta del pie","Vuelve empujando con el talón"],
+    alert:null
+  },
+  "Press hombro con mancuernas": {
+    steps:["Sentada o de pie, mancuernas a la altura de los hombros","Empuja hacia arriba sin arquear la espalda","Controla la bajada"],
+    alert:null
+  },
+  "Remo con banda elástica": {
+    steps:["Ancla la banda a la altura del pecho","Lleva los codos hacia atrás","No subas los hombros","Mantén la espalda recta"],
+    alert:null
+  },
+  "Puente glúteo con pelota": {
+    steps:["Igual que el puente normal pero con los pies sobre la pelota","La inestabilidad obliga a trabajar más los estabilizadores","Sube la cadera y aprieta los glúteos arriba"],
+    alert:"Más inestable = más trabajo real."
+  },
+  "Pallof press (banda)": {
+    steps:["Banda anclada a un lado a la altura del pecho","Sujeta con ambas manos frente al pecho","Empuja las manos hacia delante sin que el cuerpo rote","Vuelve lentamente"],
+    alert:null
+  },
+  "Plancha lateral": {
+    steps:["Apoya el codo y las rodillas (versión facilitada)","Cuerpo en línea recta de cabeza a rodillas","Cadera arriba, sin hundirla","Cuello neutro"],
+    alert:null
+  }
+};
+
+const PLAN = {
+  A:{label:"Día A",focus:"Glúteo + core + postura",sections:[
+    {name:"Activación (5 min)",rondas:1,exs:[
+      {name:"Respiración + abdomen",detail:"2 min",rondas:1},
+      {name:"Puente de glúteo",detail:"15 reps",rondas:1},
+      {name:"Bird dog",detail:"10 por lado",rondas:1}
+    ]},
+    {name:"Fuerza (3 rondas)",rondas:3,exs:[
+      {name:"Sentadilla goblet",detail:"12 reps · mancuerna al pecho",rondas:3},
+      {name:"Remo con mancuerna",detail:"12 reps por lado",rondas:3},
+      {name:"Hip thrust (sofá)",detail:"15 reps · puedes añadir peso",rondas:3},
+      {name:"Peso muerto con mancuernas",detail:"12 reps",rondas:3}
+    ]},
+    {name:"Core (2 rondas)",rondas:2,exs:[
+      {name:"Dead bug",detail:"10 por lado",rondas:2},
+      {name:"Plancha",detail:"20 seg",rondas:2}
+    ]}
+  ]},
+  B:{label:"Día B",focus:"Estabilidad + cuerpo completo",sections:[
+    {name:"Activación (5 min)",rondas:1,exs:[
+      {name:"Respiración + abdomen",detail:"2 min",rondas:1},
+      {name:"Puente de glúteo",detail:"15 reps",rondas:1},
+      {name:"Bird dog",detail:"10 por lado",rondas:1}
+    ]},
+    {name:"Fuerza (3 rondas)",rondas:3,exs:[
+      {name:"Zancadas",detail:"10 por pierna · sin peso o ligero",rondas:3},
+      {name:"Press hombro con mancuernas",detail:"10 reps",rondas:3},
+      {name:"Remo con banda elástica",detail:"12 reps",rondas:3},
+      {name:"Puente glúteo con pelota",detail:"12 reps · pies encima",rondas:3}
+    ]},
+    {name:"Core (2 rondas)",rondas:2,exs:[
+      {name:"Pallof press (banda)",detail:"10 reps",rondas:2},
+      {name:"Plancha lateral",detail:"15 seg por lado · rodillas apoyadas",rondas:2}
+    ]}
+  ]}
+};
+
+const SCHEDULE=["A","","A","B","","A",""];
+const DAYS=["L","M","X","J","V","S","D"];
+const DAYNAMES=["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+
+let state;
+try { state = JSON.parse(localStorage.getItem('entrenamiento_v1') || 'null') || {checks:{},history:[],notes:{}}; }
+catch(e) { state = {checks:{},history:[],notes:{}}; }
+
+function save() { try { localStorage.setItem('entrenamiento_v1', JSON.stringify(state)); } catch(e){} }
+
+function todayIdx() { const d=new Date().getDay(); return d===0?6:d-1; }
+function todayType() { return SCHEDULE[todayIdx()]; }
+function todayKey() { return new Date().toISOString().slice(0,10); }
+function ck(dt,si,ei,ri) { return todayKey()+'_'+dt+'_'+si+'_'+ei+'_'+ri; }
+
+function toggleCheck(k, el) {
+  state.checks[k] = !state.checks[k];
+  el.classList.toggle('done', state.checks[k]);
+  updateProg(); save();
+}
+function toggleSet(k, el) {
+  state.checks[k] = !state.checks[k];
+  el.classList.toggle('done', state.checks[k]);
+  updateProg(); save();
+}
+function toggleGuide(id) {
+  const el = document.getElementById(id);
+  if(el) el.classList.toggle('open');
+}
+
+function countTotal(plan) {
+  return plan.sections.reduce((t,s)=>t+s.exs.reduce((a,e)=>a+e.rondas,0),0);
+}
+function countDone(plan, dt) {
+  let d=0;
+  plan.sections.forEach((sec,si)=>sec.exs.forEach((ex,ei)=>{
+    for(let r=0;r<ex.rondas;r++) if(state.checks[ck(dt,si,ei,r)]) d++;
+  }));
+  return d;
+}
+function updateProg() {
+  const dt=todayType(); if(!dt) return;
+  const plan=PLAN[dt];
+  const pct=Math.round(countDone(plan,dt)/countTotal(plan)*100);
+  const bar=document.getElementById('pbar'); const lbl=document.getElementById('plbl');
+  if(bar) bar.style.width=pct+'%';
+  if(lbl) lbl.textContent=pct+'%';
+}
+
+function renderHoy() {
+  const dt=todayType();
+  const el=document.getElementById('page-hoy');
+  if(!dt) {
+    el.innerHTML=`<div class="card rest-center">
+      <div class="rest-icon">🌙</div>
+      <div class="rest-title">Hoy es día de descanso</div>
+      <div class="rest-sub">El descanso también es parte del entrenamiento.</div>
+    </div>
+    <div class="tip">💡 Opcional: añade spinning 1-2 días si quieres cardio extra.</div>`;
+    return;
+  }
+  const plan=PLAN[dt];
+  const pct=Math.round(countDone(plan,dt)/countTotal(plan)*100);
+  const notesKey='notes_'+todayKey();
+  const savedNote=state.notes[notesKey]||'';
+
+  let html=`<div class="card">
+    <div class="card-header">
+      <div><div class="card-title">${plan.label} — ${DAYNAMES[todayIdx()]}</div><div class="card-sub">${plan.focus}</div></div>
+      <span class="badge" id="plbl">${pct}%</span>
+    </div>
+    <div class="prog-bg"><div class="prog-bar" id="pbar" style="width:${pct}%"></div></div>`;
+
+  plan.sections.forEach((sec,si)=>{
+    html+=`<div class="section-lbl">${sec.name}</div>`;
+    sec.exs.forEach((ex,ei)=>{
+      const g=GUIDES[ex.name]; const gid='g_'+si+'_'+ei;
+      html+=`<div class="ex-row"><div class="ex-main">`;
+      if(ex.rondas===1) {
+        const k=ck(dt,si,ei,0); const done=state.checks[k];
+        html+=`<button class="ex-check${done?' done':''}" onclick="toggleCheck('${k}',this)" aria-label="Marcar ${ex.name}"></button>`;
+      } else {
+        html+=`<div class="sets">`;
+        for(let r=0;r<ex.rondas;r++){
+          const k=ck(dt,si,ei,r);
+          html+=`<div class="set-dot${state.checks[k]?' done':''}" onclick="toggleSet('${k}',this)" title="Ronda ${r+1}"></div>`;
+        }
+        html+=`</div>`;
+      }
+      html+=`<div style="flex:1;margin-left:9px"><div class="ex-name">${ex.name}</div><div class="ex-detail">${ex.detail}</div></div>`;
+      if(g) html+=`<button class="info-btn" onclick="toggleGuide('${gid}')" aria-label="Cómo hacer ${ex.name}">ℹ️</button>`;
+      html+=`</div>`;
+      if(g){
+        html+=`<div class="guide" id="${gid}"><ul>`;
+        g.steps.forEach(s=>{ html+=`<li>${s}</li>`; });
+        html+=`</ul>${g.alert?`<div class="guide-alert">⚠️ ${g.alert}</div>`:''}</div>`;
+      }
+      html+=`</div>`;
+    });
+  });
+
+  html+=`<div class="notes-lbl">✏️ Notas de la sesión</div>
+  <textarea id="snotes" placeholder="Cómo ha ido, pesos usados, sensaciones..." onchange="state.notes['${notesKey}']=this.value;save()">${savedNote}</textarea>
+  <button class="btn-complete" onclick="finishWorkout()">🏆 Marcar sesión como completada</button>
+  </div>
+  <div class="tip">⚠️ Para si notas presión abajo, barriga hacia fuera o dolor lumbar.</div>`;
+
+  el.innerHTML=html;
+}
+
+function finishWorkout() {
+  const dt=todayType(); const plan=PLAN[dt];
+  const pct=Math.round(countDone(plan,dt)/countTotal(plan)*100);
+  const today=todayKey();
+  const note=state.notes['notes_'+today]||'';
+  if(!state.history.find(h=>h.date===today)){
+    state.history.unshift({date:today,day:plan.label,pct,note}); save();
+  }
+  showPage('historial');
+}
+
+function renderSemana() {
+  const el=document.getElementById('page-semana');
+  const idx=todayIdx();
+  let html=`<div class="week-bar">`;
+  DAYS.forEach((d,i)=>{
+    const diff=i-idx; const dd=new Date(); dd.setDate(dd.getDate()+diff);
+    const dk=dd.toISOString().slice(0,10);
+    const hist=state.history.find(h=>h.date===dk);
+    let cls='wday-circle';
+    let content=d;
+    if(hist){cls+=' done';content='✓';}
+    else if(SCHEDULE[i]) cls+=' planned';
+    if(i===idx) cls+=' today';
+    html+=`<div class="wday"><div class="wday-name">${d}</div><div class="${cls}">${content}</div></div>`;
+  });
+  html+=`</div>`;
+
+  html+=`<div class="card">
+    <div class="card-title" style="margin-bottom:10px">Plan semanal</div>
+    <div class="section-lbl">Días de fuerza</div>
+    <div class="ex-row"><div class="ex-main"><span style="font-size:18px;margin-right:10px">🏋️</span><div><div class="ex-name">Lunes — Día A</div><div class="ex-detail">Glúteo + core + postura</div></div></div></div>
+    <div class="ex-row"><div class="ex-main"><span style="font-size:18px;margin-right:10px">🏋️</span><div><div class="ex-name">Miércoles — Día B</div><div class="ex-detail">Estabilidad + cuerpo completo</div></div></div></div>
+    <div class="ex-row"><div class="ex-main"><span style="font-size:18px;margin-right:10px">🏋️</span><div><div class="ex-name">Viernes — Día A</div><div class="ex-detail">Glúteo + core + postura</div></div></div></div>
+    <div class="section-lbl">Opcional</div>
+    <div class="ex-row"><div class="ex-main"><span style="font-size:18px;margin-right:10px">🚴</span><div class="ex-name">Spinning 1-2 días</div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:10px">Progresión</div>
+    <div class="section-lbl">Semanas 1-2</div>
+    <div class="ex-row"><div class="ex-main"><span style="margin-right:10px">📖</span><div><div class="ex-name">Aprender técnica</div><div class="ex-detail">Control antes que intensidad. Lento antes que rápido.</div></div></div></div>
+    <div class="section-lbl">Semanas 3-4</div>
+    <div class="ex-row"><div class="ex-main"><span style="margin-right:10px">📈</span><div><div class="ex-name">Más peso o más repeticiones</div><div class="ex-detail">Usa las mancuernas más pesadas</div></div></div></div>
+    <div class="section-lbl">Resultados esperados</div>
+    <div class="ex-row"><div class="ex-main"><span style="margin-right:10px">✨</span><div><div class="ex-name">2-3 semanas</div><div class="ex-detail">Menos hinchazón, más firmeza</div></div></div></div>
+    <div class="ex-row"><div class="ex-main"><span style="margin-right:10px">🎯</span><div><div class="ex-name">4-6 semanas</div><div class="ex-detail">Barriga más recogida, cuerpo más duro</div></div></div></div>
+  </div>
+  <div class="tip">💡 Si no progresas → no hay cambio. La clave es subir peso o reps cada semana.</div>`;
+
+  el.innerHTML=html;
+}
+
+function renderHistorial() {
+  const el=document.getElementById('page-historial');
+  const total=state.history.length;
+  const avg=total?Math.round(state.history.reduce((a,h)=>a+h.pct,0)/total):0;
+  const weeks=new Set(state.history.map(h=>h.date.slice(0,7))).size;
+
+  let html=`<div class="stats">
+    <div class="stat"><div class="stat-num">${total}</div><div class="stat-lbl">Sesiones</div></div>
+    <div class="stat"><div class="stat-num">${weeks}</div><div class="stat-lbl">Semanas</div></div>
+    <div class="stat"><div class="stat-num">${avg}%</div><div class="stat-lbl">Completado</div></div>
+  </div>`;
+
+  if(!total) {
+    html+=`<div class="card"><div class="empty-center">Aquí aparecerán tus sesiones cuando las completes. 💪</div></div>`;
+  } else {
+    html+=`<div class="card">`;
+    state.history.slice(0,40).forEach(h=>{
+      const d=new Date(h.date+'T12:00:00');
+      const fmt=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+      html+=`<div class="hist-row">
+        <div class="hist-top">
+          <div style="display:flex;align-items:center">
+            <div class="hist-dot"></div>
+            <div><div class="hist-day">${h.day}</div><div class="hist-date">${fmt}</div></div>
+          </div>
+          <div class="hist-pct">${h.pct}%</div>
+        </div>
+        ${h.note?`<div class="hist-note">"${h.note}"</div>`:''}
+      </div>`;
+    });
+    html+=`</div>`;
+    html+=`<button class="btn-clear" onclick="if(confirm('¿Borrar todo el historial?')){state.history=[];state.checks={};state.notes={};save();renderHistorial()}">Borrar historial</button>`;
+  }
+  el.innerHTML=html;
+}
+
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  const map={hoy:0,semana:1,historial:2};
+  document.querySelectorAll('.tab')[map[p]].classList.add('active');
+  if(p==='hoy') renderHoy();
+  if(p==='semana') renderSemana();
+  if(p==='historial') renderHistorial();
+}
+
+renderHoy();
+</script>
+</body>
+</html>
