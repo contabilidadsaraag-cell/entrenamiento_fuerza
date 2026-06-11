@@ -109,6 +109,19 @@
   .spin-row{display:flex;gap:8px;flex-wrap:wrap}
   .spin-btn{padding:7px 14px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit}
   .spin-btn.done{background:var(--success-bg);border-color:var(--success-dot);color:var(--success-text);font-weight:600}
+
+  /* Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:flex-end;justify-content:center}
+  .modal-overlay.hidden{display:none}
+  .modal{background:var(--bg);border-radius:var(--radius) var(--radius) 0 0;padding:20px 16px 32px;width:100%;max-width:480px}
+  .modal-title{font-size:16px;font-weight:600;margin-bottom:16px}
+  .modal label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;margin-top:12px}
+  .modal select,.modal input[type=date],.modal input[type=range]{width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg2);color:var(--text);font-size:14px;font-family:inherit}
+  .modal select:focus,.modal input:focus{outline:none;border-color:var(--text3)}
+  .modal-pct{font-size:22px;font-weight:700;text-align:center;margin:4px 0}
+  .modal-btns{display:flex;gap:8px;margin-top:18px}
+  .btn-primary{flex:1;padding:11px;border-radius:var(--radius-sm);border:none;background:var(--text);color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn-secondary{flex:1;padding:11px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:none;color:var(--text2);font-size:14px;cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body>
@@ -124,6 +137,41 @@
   <div id="page-hoy" class="page active"></div>
   <div id="page-semana" class="page"></div>
   <div id="page-historial" class="page"></div>
+</div>
+
+<!-- Modal añadir sesión pasada -->
+<div class="modal-overlay hidden" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title">➕ Añadir sesión pasada</div>
+    <label>Fecha</label>
+    <input type="date" id="modal-date">
+    <label>Tipo de sesión</label>
+    <select id="modal-type" onchange="toggleModalType()">
+      <option value="A">Día A — Glúteo + core + postura</option>
+      <option value="B">Día B — Estabilidad + cuerpo completo</option>
+      <option value="Spinning">🚴 Spinning</option>
+    </select>
+    <div id="modal-workout-fields">
+      <label>Completado</label>
+      <div class="modal-pct" id="modal-pct-lbl">100%</div>
+      <input type="range" id="modal-pct" min="0" max="100" value="100" oninput="document.getElementById('modal-pct-lbl').textContent=this.value+'%'">
+    </div>
+    <div id="modal-spin-fields" style="display:none">
+      <label>Duración</label>
+      <select id="modal-spin-mins">
+        <option value="30">30 min</option>
+        <option value="45">45 min</option>
+        <option value="60" selected>60 min</option>
+        <option value="90">90 min</option>
+      </select>
+    </div>
+    <label>Notas (opcional)</label>
+    <textarea id="modal-notes" style="min-height:56px" placeholder="Cómo fue, pesos, sensaciones..."></textarea>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveManualSession()">Guardar</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -457,7 +505,8 @@ function renderHistorial(){
     <div class="stat"><div class="stat-num">${total}</div><div class="stat-lbl">Sesiones</div></div>
     <div class="stat"><div class="stat-num">${weeks}</div><div class="stat-lbl">Semanas</div></div>
     <div class="stat"><div class="stat-num">${avg}%</div><div class="stat-lbl">Completado</div></div>
-  </div>`;
+  </div>
+  <button class="btn-complete" style="margin-bottom:10px" onclick="openModal()">➕ Añadir sesión pasada</button>`;
 
   // Merge and sort all entries
   const all=[...state.history].sort((a,b)=>b.date.localeCompare(a.date));
@@ -485,6 +534,44 @@ function renderHistorial(){
     html+=`<button class="btn-clear" onclick="if(confirm('¿Borrar todo el historial?')){state.history=[];state.checks={};state.notes={};save();renderHistorial()}">Borrar historial</button>`;
   }
   el.innerHTML=html;
+}
+
+function openModal(){
+  // Set default date to yesterday
+  const d=new Date(); d.setDate(d.getDate()-1);
+  document.getElementById('modal-date').value=d.toISOString().slice(0,10);
+  document.getElementById('modal-date').max=new Date().toISOString().slice(0,10);
+  document.getElementById('modal-type').value='A';
+  document.getElementById('modal-pct').value=100;
+  document.getElementById('modal-pct-lbl').textContent='100%';
+  document.getElementById('modal-notes').value='';
+  toggleModalType();
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+function closeModal(){
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+function toggleModalType(){
+  const t=document.getElementById('modal-type').value;
+  document.getElementById('modal-workout-fields').style.display=t==='Spinning'?'none':'block';
+  document.getElementById('modal-spin-fields').style.display=t==='Spinning'?'block':'none';
+}
+function saveManualSession(){
+  const date=document.getElementById('modal-date').value;
+  const type=document.getElementById('modal-type').value;
+  const note=document.getElementById('modal-notes').value.trim();
+  if(!date){alert('Elige una fecha');return;}
+  // Remove existing entry for that date and type to avoid duplicates
+  state.history=state.history.filter(h=>!(h.date===date&&(type==='Spinning'?h.day==='Spinning':h.day!=='Spinning')));
+  if(type==='Spinning'){
+    const mins=parseInt(document.getElementById('modal-spin-mins').value);
+    state.history.push({date,day:'Spinning',pct:100,mins,note});
+  } else {
+    const pct=parseInt(document.getElementById('modal-pct').value);
+    state.history.push({date,day:'Día '+type,pct,note});
+  }
+  state.history.sort((a,b)=>b.date.localeCompare(a.date));
+  save(); closeModal(); renderHistorial();
 }
 
 function showPage(p){
